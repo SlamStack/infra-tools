@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Name: infra-tools
+Name: mass-asg-rebuild
 Author: shane.warner@fox.com
 Synopsis: This script automatically locates autoscaling enabled clusters, builds and bootstraps fresh nodes for them
 via Chef, and creates AMI images for the resulting node builds for use with asgard and autoscaling groups.
@@ -42,13 +42,17 @@ class asg(object):
         status = 0
         stopped = []
 
-        print "Stopping instances..."
+        print "-------------------------------"
+        print "Stopping instances"
+        print "-------------------------------"
 
         totalInstances = len(instance_ids)
         stoppedCount = 0
 
         for instance_id in instance_ids:
             try:
+                instance.add_tag("Name", "chef-autobuild")
+                time.sleep(1)
                 self.ec2.stop_instances(instance_id.encode('ascii'))
             except Exception as e:
                 print "Failed to issue stop command for {0}".format(instance_id.encode('ascii'))
@@ -63,6 +67,8 @@ class asg(object):
 
         for instance in instances:
             try:
+                instance.add_tag("Name", "chef-autobuild")
+                time.sleep(1)
                 self.ec2.stop_instances(instance.id)
             except Exception as e:
                 print "Failed to issue stop command for {0}".format(instance_id.encode('ascii'))
@@ -94,7 +100,9 @@ class asg(object):
         cluster_data = []
 
         print "Using AMI ID: {0}".format(imageId)
-        print "Finding clusters with autoscaling enabled..."
+        print "-------------------------------"
+        print "Identifying autoscale clusters"
+        print "-------------------------------"
 
         for name, item in self.bag.iteritems():
             for row in chef.Search('node', 'cluster:' + name + " AND chef_environment:prod"):
@@ -116,6 +124,7 @@ class asg(object):
                                     roles = role
                                     break
 
+                        print "{0}".format(name)
                         cluster_data.append((name, "prod", roles, node['ec2']['security_groups']))
                         break
 
@@ -134,7 +143,10 @@ class asg(object):
         now = time.time()
         timelimit = now + self.threshold
 
-        print "Building servers via Chef to be used for imaging..."
+        print "-------------------------------"
+        print "Launching Chef builds"
+        print "-------------------------------"
+
         for cluster, env, role, securityGroups in cluster_data:
             time.sleep(1)
             userData = 'HOSTNAME=chef-autobuild01 ENV=prod CLUSTER=' + cluster + ' AUTOSCALE=1 ROLES=' + role
@@ -148,7 +160,9 @@ class asg(object):
                 print "Failed to launch instance for cluster: {0}".format(cluster)
                 print e.message
 
-        print "Waiting for instances to complete the build process..."
+        print "-------------------------------"
+        print "Waiting for builds to complete"
+        print "-------------------------------"
         while status == 0:
             time.sleep(10)
 
@@ -161,9 +175,7 @@ class asg(object):
                 for row in chef.Search('node', 'ec2_reservation_id:' + r_id + " AND chef_environment:prod", 1):
                     node = chef.Node(row.object.name)
                     if node is not None and len(row) > 0:
-                        sys.stdout.write("\n Cluster: " + node['cluster'] + " Instance ID: " + node['ec2']['instance_id']
-                                         + " registered with chef.\n")
-                        sys.stdout.flush()
+                        print node['ec2']['instance_id'] + " => " + node['cluster']
                         reservation_ids.remove(r_id)
                         instance_ids.append((node['ec2']['instance_id']))
 
@@ -185,7 +197,10 @@ class asg(object):
         now = time.time()
         timelimit = now + self.threshold
 
+        print "-------------------------------"
         print "Starting AMI imaging..."
+        print "-------------------------------"
+
         timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         for instance_id in stopped:
             for row in chef.Search('node', 'ec2_instance_id:' + instance_id + " AND chef_environment:prod", 1):
@@ -230,10 +245,10 @@ def main():
     print "Run complete."
     print "SUMMARY:"
     print "-------------------------------"
-    print "     AMI     |   CLUSTER       "
+    print "     AMI => CLUSTER            "
     print "-------------------------------"
     for ami, cluster in completed:
-        print ami, cluster
+        print ami + " => " + cluster
 
     print "-------------------------------"
     print "FAILED BUILDS/AMIS"
