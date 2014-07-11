@@ -21,7 +21,7 @@ class asg(object):
         self.api = chef.autoconfigure()
         self.bag = chef.DataBag('clusters')
         self.ec2 = boto.connect_ec2()
-        self.threshold = 1800
+        self.threshold = 2400
 
     def cleanup(self):
         """
@@ -46,17 +46,20 @@ class asg(object):
         print "Stopping instances"
         print "-------------------------------"
 
-        totalInstances = len(instance_ids)
-        stoppedCount = 0
-
         for instance_id in instance_ids:
             try:
-                instance.add_tag("Name", "chef-autobuild")
-                time.sleep(1)
+                self.ec2.create_tags(instance_id, {"Name": "chef-autobuild"})
+            except Exception as e:
+                print "Failed to add tag for {0}".format(instance_id)
+
+            time.sleep(1)
+
+            try:
                 self.ec2.stop_instances(instance_id.encode('ascii'))
             except Exception as e:
                 print "Failed to issue stop command for {0}".format(instance_id.encode('ascii'))
                 print e.message
+
         try:
             reservations = self.ec2.get_all_reservations(filters={'reservation_id':failed_ids})
         except Exception as e:
@@ -67,11 +70,16 @@ class asg(object):
 
         for instance in instances:
             try:
-                instance.add_tag("Name", "chef-autobuild")
+                self.ec2.create_tags(instance.id, {"Name": "chef-autobuild"})
+            except Exception as e:
+                print "Failed to add tag for {0}".format(instance.id)
+
                 time.sleep(1)
+
+            try:
                 self.ec2.stop_instances(instance.id)
             except Exception as e:
-                print "Failed to issue stop command for {0}".format(instance_id.encode('ascii'))
+                print "Failed to issue stop command for {0}".format(instance.id)
                 print e.message
 
         while status == 0:
@@ -105,7 +113,7 @@ class asg(object):
         print "-------------------------------"
 
         for name, item in self.bag.iteritems():
-            for row in chef.Search('node', 'cluster:' + name + " AND chef_environment:prod"):
+            for row in chef.Search('node', 'cluster:' + name + " AND chef_environment:prod NOT cluster:splunk"):
                 node = chef.Node(row.object.name)
                 str = node['ec2']['userdata']
 
@@ -125,7 +133,7 @@ class asg(object):
                                     break
 
                         print "{0}".format(name)
-                        cluster_data.append((name, "prod", roles, node['ec2']['security_groups']))
+                        cluster_data.append((name, "stage", roles, node['ec2']['security_groups']))
                         break
 
         return cluster_data
@@ -149,7 +157,7 @@ class asg(object):
 
         for cluster, env, role, securityGroups in cluster_data:
             time.sleep(1)
-            userData = 'HOSTNAME=chef-autobuild01 ENV=prod CLUSTER=' + cluster + ' AUTOSCALE=1 ROLES=' + role
+            userData = 'HOSTNAME=chef-autobuild01 ENV=stage CLUSTER=' + cluster + ' AUTOSCALE=1 AUTOBUILD=1 ROLES=' + role
 
             try:
                 reservation = self.ec2.run_instances(image_id=imageId, key_name='ffe-ec2', security_groups=securityGroups,
@@ -172,7 +180,7 @@ class asg(object):
                     failed_ids.append(r_id)
 
             for r_id in reservation_ids:
-                for row in chef.Search('node', 'ec2_reservation_id:' + r_id + " AND chef_environment:prod", 1):
+                for row in chef.Search('node', 'ec2_reservation_id:' + r_id + " AND chef_environment:stage", 1):
                     node = chef.Node(row.object.name)
                     if node is not None and len(row) > 0:
                         print node['ec2']['instance_id'] + " => " + node['cluster']
@@ -203,7 +211,7 @@ class asg(object):
 
         timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         for instance_id in stopped:
-            for row in chef.Search('node', 'ec2_instance_id:' + instance_id + " AND chef_environment:prod", 1):
+            for row in chef.Search('node', 'ec2_instance_id:' + instance_id + " AND chef_environment:stage", 1):
                 time.sleep(1)
                 node = chef.Node(row.object.name)
                 if node is not None and len(row) > 0:
