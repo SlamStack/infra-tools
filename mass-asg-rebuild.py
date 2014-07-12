@@ -2,8 +2,8 @@
 """
 Name: mass-asg-rebuild
 Author: shane.warner@fox.com
-Synopsis: This script automatically locates autoscaling enabled clusters, builds and bootstraps fresh nodes for them
-via Chef, and creates AMI images for the resulting node builds for use with asgard and autoscaling groups.
+Synopsis: This tool automatically locates autoscaling enabled clusters in ASGARD, builds and bootstraps fresh nodes for them
+via Chef, and creates AMI images for the resulting node builds for use with ASGARD and autoscaling groups.
 """
 import chef
 import boto
