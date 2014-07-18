@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Name: mass-asg-rebuild
 Author: shane.warner@fox.com
@@ -20,7 +20,10 @@ class asg(object):
     def __init__(self):
         self.api = chef.autoconfigure()
         self.bag = chef.DataBag('clusters')
-        self.ec2 = boto.connect_ec2()
+        try:
+            self.ec2 = boto.connect_ec2()
+        except Exception as e:
+            print e
         self.threshold = 2400
 
     def cleanup(self):
@@ -32,11 +35,10 @@ class asg(object):
             node = chef.Node(row.object.name)
             chef.Node.delete(node)
 
-    def stopServers(self, instance_ids):
+    def stop_servers(self, instance_ids):
         """
         Stops instances specified in list. It will also stop any servers listed in failed_ids as a cleanup measure.
-        :param instances_ids:
-        List of instance ids to stop
+        :param instances_ids: List of instance ids to stop
         """
 
         status = 0
@@ -58,13 +60,13 @@ class asg(object):
                 self.ec2.stop_instances(instance_id.encode('ascii'))
             except Exception as e:
                 print "Failed to issue stop command for {0}".format(instance_id.encode('ascii'))
-                print e.message
+                print e
 
         try:
             reservations = self.ec2.get_all_reservations(filters={'reservation_id':failed_ids})
         except Exception as e:
             print "Failed to get instance reservations."
-            print e.message
+            print e
 
         instances = [i for r in reservations for i in r.instances]
 
@@ -80,7 +82,7 @@ class asg(object):
                 self.ec2.stop_instances(instance.id)
             except Exception as e:
                 print "Failed to issue stop command for {0}".format(instance.id)
-                print e.message
+                print e
 
         while status == 0:
             time.sleep(10)
@@ -97,7 +99,7 @@ class asg(object):
 
         return stopped
 
-    def buildList(self):
+    def build_list(self):
         """
         Builds a list of cluster data for autoscaling clusters.
         We query the Chef server for nodes with autoscaling enabled and add their properties to the list to be
@@ -138,11 +140,10 @@ class asg(object):
 
         return cluster_data
 
-    def buildServers(self, cluster_data):
+    def build_servers(self, cluster_data):
         """
         Bootstraps and builds autoscaling servers to be used for AMI imaging.
-        :param cluster_data:
-        List of the following format: [(name,env,roles,securityGroups),]
+        :param cluster_data: List of the following format: [(name,env,roles,securityGroups),]
         """
 
         reservation_ids = []
@@ -166,7 +167,7 @@ class asg(object):
                 reservation_ids.append((reservation.id))
             except Exception as e:
                 print "Failed to launch instance for cluster: {0}".format(cluster)
-                print e.message
+                print e
 
         print "-------------------------------"
         print "Waiting for builds to complete"
@@ -192,11 +193,10 @@ class asg(object):
 
         return instance_ids
 
-    def createImages(self, stopped):
+    def create_images(self, stopped):
         """
         Creates AMI images for the specified instances.
-        :param stopped:
-        List of instances in the stopped state.
+        :param stopped: List of instances in the stopped state.
         """
 
         completed = []
@@ -220,7 +220,7 @@ class asg(object):
                         ami_ids.append((ami, node['cluster']))
                     except Exception as e:
                         print "Failed to issue create_image for {0}".format(instance_id)
-                        print e.message
+                        print e
 
         while status == 0:
             for ami, cluster in ami_ids:
@@ -244,10 +244,10 @@ class asg(object):
 
 def main():
     autoscale = asg()
-    cluster_data = autoscale.buildList()
-    instance_ids = autoscale.buildServers(cluster_data)
-    stopped = autoscale.stopServers(instance_ids)
-    completed = autoscale.createImages(stopped)
+    cluster_data = autoscale.build_list()
+    instance_ids = autoscale.build_servers(cluster_data)
+    stopped = autoscale.stop_servers(instance_ids)
+    completed = autoscale.create_images(stopped)
     autoscale.cleanup()
 
     print "Run complete."
