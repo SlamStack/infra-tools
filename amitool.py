@@ -21,7 +21,7 @@ class ami(object):
             return -1
 
     def create(self, instance_id, name, desc):
-        """orphaned ami snapshot: snap-41ead712 => ami-c26910ab 8GB
+        """
         Creates an AMI image.
         :param instance_id: Instance ID of the desired instance to image.
         """
