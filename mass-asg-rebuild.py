@@ -11,6 +11,7 @@ import sys
 import time
 import pprint
 from datetime import datetime
+from boto.ec2.blockdevicemapping import BlockDeviceType, BlockDeviceMapping
 
 # Globals
 imageId='ami-5d3d1f34'
@@ -151,6 +152,13 @@ class asg(object):
         status = 0
         now = time.time()
         timelimit = now + self.threshold
+        map = BlockDeviceMapping()
+        eph0 = BlockDeviceType()
+        eph1 = BlockDeviceType()
+        eph0.ephemeral_name = 'ephemeral0'
+        eph1.ephemeral_name = 'ephemeral1'
+        map['/dev/sdb'] = eph0
+        map['/dev/sdc'] = eph1
 
         print "-------------------------------"
         print "Launching Chef builds"
@@ -162,7 +170,7 @@ class asg(object):
 
             try:
                 reservation = self.ec2.run_instances(image_id=imageId, key_name='ffe-ec2', security_groups=securityGroups,
-                                            instance_type='c1.xlarge', user_data=userData)
+                                            instance_type='c3.xlarge', user_data=userData, block_device_map=map)
                 print "Launched " + reservation.id
                 reservation_ids.append((reservation.id))
             except Exception as e:
