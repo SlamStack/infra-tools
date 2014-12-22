@@ -14,7 +14,7 @@ from datetime import datetime
 from boto.ec2.blockdevicemapping import BlockDeviceType, BlockDeviceMapping
 
 # Globals
-imageId='ami-5d3d1f34'
+imageId='ami-04fe926c'
 failed_ids = []
 
 class asg(object):
