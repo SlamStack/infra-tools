@@ -8,6 +8,7 @@ via Chef, and creates AMI images for the resulting node builds for use with ASGA
 import chef
 import boto
 import sys
+import copy
 import time
 import pprint
 from datetime import datetime
@@ -271,9 +272,10 @@ def main():
     autoscale = asg()
     cluster_data = autoscale.build_list()
     instance_ids = autoscale.build_servers(cluster_data)
+    terminate_ids = copy.copy(instance_ids)
     stopped = autoscale.stop_servers(instance_ids)
     completed = autoscale.create_images(stopped)
-    autoscale.cleanup(instance_ids + failed_ids)
+    autoscale.cleanup(terminate_ids)
 
     print "Run complete."
     print "SUMMARY:"
