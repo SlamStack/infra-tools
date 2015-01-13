@@ -27,10 +27,15 @@ class asg(object):
             print e
         self.threshold = 2400
 
-    def cleanup(self):
+    def cleanup(self, instance_ids, terminate=True):
         """
         Deletes the build nodes and clients out of the Chef server.
+        Also terminates all instances that were launched as a result of the build.
+        :param instances_ids: List of instance ids to terminate
         """
+
+        for instance in instance_ids:
+            self.terminate(instance)
 
         for row in chef.Search('node', 'name:*.internal'):
             node = chef.Node(row.object.name)
@@ -250,13 +255,25 @@ class asg(object):
 
         return completed
 
+    def terminate(self, instance_id):
+        """
+        Terminates the supplied instance ID.
+        :param instance_id: Instance ID to terminate.
+        :return: True or False
+        """
+        try:
+            self.ec2.terminate_instances(instance_ids=instance_id)
+        except Exception as e:
+            print "Failed to terminate instance id {0}".format(instance_id)
+            print e
+
 def main():
     autoscale = asg()
     cluster_data = autoscale.build_list()
     instance_ids = autoscale.build_servers(cluster_data)
     stopped = autoscale.stop_servers(instance_ids)
     completed = autoscale.create_images(stopped)
-    autoscale.cleanup()
+    autoscale.cleanup(instance_ids + failed_ids)
 
     print "Run complete."
     print "SUMMARY:"
