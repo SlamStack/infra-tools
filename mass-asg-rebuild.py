@@ -5,6 +5,7 @@ Author: shane.warner@fox.com
 Synopsis: This tool automatically locates autoscaling enabled clusters in ASGARD, builds and bootstraps fresh nodes for them
 via Chef, and creates AMI images for the resulting node builds for use with ASGARD and autoscaling groups.
 """
+
 import chef
 import boto
 import sys
@@ -13,7 +14,7 @@ import time
 import pprint
 from datetime import datetime
 from boto.ec2.blockdevicemapping import BlockDeviceType, BlockDeviceMapping
-
+from boto import utils
 # Globals
 imageId='ami-04fe926c'
 failed_ids = []
