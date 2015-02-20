@@ -27,8 +27,8 @@
       <file leaf-file-name="kmsdb.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/kmsdb.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.645" vertical-offset="4003" max-vertical-offset="5899">
-              <caret line="281" column="98" selection-start-line="0" selection-start-column="0" selection-end-line="341" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.68881685" vertical-offset="612" max-vertical-offset="6086">
+              <caret line="86" column="65" selection-start-line="86" selection-start-column="16" selection-end-line="86" selection-end-column="65" />
               <folding>
                 <element signature="e#121#136#0" expanded="true" />
               </folding>
@@ -584,8 +584,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/kmsdb.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.645" vertical-offset="4003" max-vertical-offset="5899">
-          <caret line="281" column="98" selection-start-line="0" selection-start-column="0" selection-end-line="341" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.68881685" vertical-offset="612" max-vertical-offset="6086">
+          <caret line="86" column="65" selection-start-line="86" selection-start-column="16" selection-end-line="86" selection-end-column="65" />
           <folding>
             <element signature="e#121#136#0" expanded="true" />
           </folding>

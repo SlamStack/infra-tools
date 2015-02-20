@@ -77,6 +77,17 @@ class kmsdb(object):
 
         if self.recycle_role == 0:
             client_role_arn = response.get("create_role_response")[u'create_role_result'].arn
+            try:
+                response = self.iam.create_instance_profile(name)
+            except Exception as e:
+                print "[-] Error creating instance profile {0}".format(name)
+                print e
+
+            try:
+                self.iam.add_role_to_instance_profile(name, name)
+            except Exception as e:
+                print "[-] Error adding role {0} to instance_profile {1}".format(name, name)
+
             print "[+] Created role {0}".format(client_role_arn)
 
         # Convert name into a format AWS prefers
