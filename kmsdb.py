@@ -294,8 +294,6 @@ class kmsdb(object):
 
         return
 
-
-
     def _get_data_key(self, name):
         """
         Internal function to retrieve the data key for a cluster using KMS and the secrets file.

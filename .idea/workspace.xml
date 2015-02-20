@@ -27,10 +27,22 @@
       <file leaf-file-name="kmsdb.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/kmsdb.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.68881685" vertical-offset="612" max-vertical-offset="6086">
-              <caret line="86" column="65" selection-start-line="86" selection-start-column="16" selection-end-line="86" selection-end-column="65" />
+            <state vertical-scroll-proportion="4.179167" vertical-offset="0" max-vertical-offset="6052">
+              <caret line="295" column="0" selection-start-line="295" selection-start-column="0" selection-end-line="295" selection-end-column="0" />
               <folding>
                 <element signature="e#121#136#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mass-asg-rebuild.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mass-asg-rebuild.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="2176" max-vertical-offset="5168">
+              <caret line="166" column="30" selection-start-line="166" selection-start-column="30" selection-end-line="166" selection-end-column="30" />
+              <folding>
+                <element signature="e#315#326#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -574,8 +586,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/mass-asg-rebuild.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.19833334" vertical-offset="34" max-vertical-offset="5168">
-          <caret line="16" column="22" selection-start-line="16" selection-start-column="22" selection-end-line="16" selection-end-column="22" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="2176" max-vertical-offset="5168">
+          <caret line="166" column="30" selection-start-line="166" selection-start-column="30" selection-end-line="166" selection-end-column="30" />
           <folding>
             <element signature="e#315#326#0" expanded="true" />
           </folding>
@@ -584,8 +596,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/kmsdb.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.68881685" vertical-offset="612" max-vertical-offset="6086">
-          <caret line="86" column="65" selection-start-line="86" selection-start-column="16" selection-end-line="86" selection-end-column="65" />
+        <state vertical-scroll-proportion="4.179167" vertical-offset="0" max-vertical-offset="6052">
+          <caret line="295" column="0" selection-start-line="295" selection-start-column="0" selection-end-line="295" selection-end-column="0" />
           <folding>
             <element signature="e#121#136#0" expanded="true" />
           </folding>
