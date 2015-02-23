@@ -179,7 +179,7 @@ class kmsdb(object):
 
         # Create the encrypted data bag using knife (for now)
         try:
-            subprocess.call("knife data bag create " + name.replace("alias/cluster/", "") + " -s /dev/shm/temp_data_key", shell=True)
+            subprocess.call("knife data bag create " + name.replace("alias/cluster/", "") + " --secret-file /dev/shm/temp_data_key", shell=True)
         except OSError as e:
             print "[-] Error creating Chef data bag."
             print e
@@ -248,7 +248,7 @@ class kmsdb(object):
         # download the Chef databag in json format (decrypted) to a temp file on /dev/shm for editing
         databag_file =  "/dev/shm/" + name + ".json"
         try:
-            subprocess.call("knife data bag show " + name + " secrets -Fj -s /dev/shm/" + name + ".tmp.key >" + databag_file, shell=True)
+            subprocess.call("knife data bag show " + name + " secrets -Fj --secret-file /dev/shm/" + name + ".tmp.key >" + databag_file, shell=True)
         except OSError as e:
             print "[-] Error dumping Chef data bag."
             print e
