@@ -171,7 +171,7 @@ class kmsdb(object):
         # Store the actual key in a temp file on /dev/shm for use in creating the encrypted databag
         try:
             f = open('/dev/shm/tmp_data_key', 'w')
-            f.write(data_key)
+            f.write(base64.b64encode(data_key))
             f.close()
         except:
             print "[-] Error writing temp data key file on /dev/shm."
@@ -242,7 +242,7 @@ class kmsdb(object):
             print "[-] Error creating temp data key file {0}".format(key_file)
             return
 
-        file.write(decrypted_key)
+        file.write(base64.b64encode(decrypted_key))
         file.close()
 
         # download the Chef databag in json format (decrypted) to a temp file on /dev/shm for editing
