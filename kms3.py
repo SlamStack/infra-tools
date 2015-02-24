@@ -76,19 +76,51 @@ class kms3(object):
 
     def decrypt_file(self, file_name, key):
         with open(file_name, 'rb') as fo:
-            ciphertext = fo.read()
+            try:
+                ciphertext = fo.read()
+            except:
+                print "[-] Error opening file {0} for reading.".format(file_name)
+                return
         dec = self.decrypt(ciphertext, key)
         with open(file_name[:-4], 'wb') as fo:
-            fo.write(dec)
+            try:
+                fo.write(dec)
+            except:
+                print "[-] Error writing out file {0}".format(file_name[:-4])
 
-    def download_from_s3(self, cluster, file_name):
+    def download_from_s3(self, name, file_name):
         """
         Downloads the specified file name from the cluster's s3 bucket/prefix.
         :param cluster: Name of the cluster the file belongs to.
         :param file_name: File name on s3.
-        :return:
+        :return: Returns the path to the file
         """
-        return
+        # Connect to the bucket
+        try:
+            bucket = self.s3.get_bucket(self.__secrets_bucket__)
+        except Exception as e:
+            print "[-] Error"
+            print e
+            return
+
+        # Set the relative bucket key path
+        key = bucket.get_key("cluster/" + name + "/" + file_name)
+
+        # Create the output directory if it doesn't exist in /dev/shm
+        directory = "/dev/shm/" + "cluster/" + name
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        out_file_path = directory + "/" + file_name
+
+        # Download the file from s3
+        try:
+            key.get_contents_to_filename(out_file_path)
+        except Exception as e:
+            print "[-] Error"
+            print e
+            return
+
+        return out_file_path
 
     def download_data_key(self, name):
         """
@@ -108,35 +140,43 @@ class kms3(object):
         file.write(temp_data_key)
         print "[+] {0} data key saved to {1}".format(name, output_file)
 
-    def edit(self, cluster, name):
+    def edit(self, name, file):
         """
         Edits a cluster specific file on s3.
         :param name: File name.
         :param cluster: Name of the cluster the file belongs to.
         :return:
         """
+        # Check that the file exists on s3 before proceeding
+        if not self.exists_on_s3(name, file):
+            print "[-] File does not exist on s3 or role permissions are incorrect."
+            return
+
         # Grab the data key from IAM
         decrypted_key = self._get_data_key(name)
 
         # store the key in a temporary file in /dev/shm for working with the encrypted file.
         key_file = "/dev/shm/" + name + ".tmp.key"
         try:
-            file = open(key_file, "w")
-        except Exception as e:
+            key_file_out = open(key_file, "w")
+        except:
             print "[-] Error creating temp data key file {0}".format(key_file)
             return
 
-        file.write(decrypted_key)
-        file.close()
+        key_file_out.write(decrypted_key)
+        key_file_out.close()
 
         # Download the file from s3 to /dev/shm
+        file_name = self.download_from_s3(name, file)
+
+        # Decrypt the file before editing
+        decrypted_file_name = self.decrypt_file(file_name, decrypted_key)
 
         # Call $EDITOR to edit the file.
         EDITOR = os.environ.get('EDITOR','vim')
-        call([EDITOR, databag_file])
+        call([EDITOR, decrypted_file_name])
 
         # Upload the file back to s3
-
 
         # Get rid of the evidence
         # Nuke file here
@@ -402,8 +442,8 @@ def main():
 
     edit_parser = subparsers.add_parser('edit', help='Edit an KMS encrypted file on s3. WARNING: This is not intended for binaries.')
     edit_parser.set_defaults(operation='edit')
-    edit_parser.add_argument('--cluster', help='Name of cluster the file belongs to.', required=True)
-    edit_parser.add_argument('--file', help='Name of the file.')
+    edit_parser.add_argument('--name', help='Name of the cluster.', required=True)
+    edit_parser.add_argument('--file', help='Name of the file.', required=True)
 
     create_parser = subparsers.add_parser('setup', help='Set up a new cluster for KMS file storage. Creates a role, data key, grants and s3 bucket prefix for the specified cluster.')
     create_parser.set_defaults(operation='setup')
@@ -427,7 +467,7 @@ def main():
     api = kms3()
 
     if args['operation'] == "edit":
-        api.edit(args['name'])
+        api.edit(args['name'], args['file'])
     if args['operation'] == "get-key":
         api.download_data_key(args['name'])
     if args['operation'] == "setup":
