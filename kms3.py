@@ -201,9 +201,9 @@ class kms3(object):
         self.upload(name, decrypted_file_name)
 
         # Clean up any other files laying around
-        #self.secure_delete(file_name, passes=10)
-        #self.secure_delete(decrypted_file_name, passes=10)
-        #self.secure_delete(key_file, passes=10)
+        self.secure_delete(file_name, passes=10)
+        self.secure_delete(decrypted_file_name, passes=10)
+        self.secure_delete(key_file, passes=10)
 
         return
 
