@@ -27,12 +27,10 @@
       <file leaf-file-name="kms3.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/kms3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="1.7633711" vertical-offset="0" max-vertical-offset="5610">
-              <caret line="144" column="44" selection-start-line="144" selection-start-column="44" selection-end-line="144" selection-end-column="44" />
+            <state vertical-scroll-proportion="0.42706645" vertical-offset="2482" max-vertical-offset="8704">
+              <caret line="177" column="50" selection-start-line="177" selection-start-column="50" selection-end-line="177" selection-end-column="50" />
               <folding>
                 <element signature="e#180#195#0" expanded="true" />
-                <element signature="e#4038#4547#0" expanded="false" />
-                <element signature="e#7038#13003#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -372,13 +370,6 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/kms3.py</url>
-          <line>437</line>
-          <option name="timeStamp" value="3" />
-        </line-breakpoint>
-      </breakpoints>
       <option name="time" value="5" />
     </breakpoint-manager>
     <watches-manager />
@@ -390,8 +381,6 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#180#195#0" expanded="true" />
-            <element signature="e#4038#4547#0" expanded="false" />
-            <element signature="e#7038#13003#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -409,8 +398,6 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#180#195#0" expanded="true" />
-            <element signature="e#4038#4547#0" expanded="false" />
-            <element signature="e#7038#13003#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -613,12 +600,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/kms3.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.7633711" vertical-offset="0" max-vertical-offset="5610">
-          <caret line="144" column="44" selection-start-line="144" selection-start-column="44" selection-end-line="144" selection-end-column="44" />
+        <state vertical-scroll-proportion="0.42706645" vertical-offset="2482" max-vertical-offset="8704">
+          <caret line="177" column="50" selection-start-line="177" selection-start-column="50" selection-end-line="177" selection-end-column="50" />
           <folding>
             <element signature="e#180#195#0" expanded="true" />
-            <element signature="e#4038#4547#0" expanded="false" />
-            <element signature="e#7038#13003#0" expanded="false" />
           </folding>
         </state>
       </provider>

@@ -71,27 +71,44 @@ class kms3(object):
                 fo.write(enc)
             except:
                 print "[-] Error writing tmp file {0}".format("/dev/shm/" + os.path.basename(file_name) + ".enc")
+        os.chmod("/dev/shm/" + os.path.basename(file_name) + ".enc", 0600)
 
         return
 
     def decrypt_file(self, file_name, key):
+        """
+        Decrypts the supplied file name with the supplied key.
+        :param file_name: Name of the local file to decrypt
+        :param key: AES 256 key.
+        :return: Returns the full path to the decrypted file.
+        """
         with open(file_name, 'rb') as fo:
             try:
                 ciphertext = fo.read()
             except:
                 print "[-] Error opening file {0} for reading.".format(file_name)
                 return
-        dec = self.decrypt(ciphertext, key)
+        try:
+            dec = self.decrypt(ciphertext, key)
+        except:
+            print "[-] Decryption failed."
+            return
+
         with open(file_name[:-4], 'wb') as fo:
+
             try:
                 fo.write(dec)
             except:
                 print "[-] Error writing out file {0}".format(file_name[:-4])
+                return
+
+        os.chmod(file_name[:-4], 0600)
+        return file_name[:-4]
 
     def download_from_s3(self, name, file_name):
         """
         Downloads the specified file name from the cluster's s3 bucket/prefix.
-        :param cluster: Name of the cluster the file belongs to.
+        :param name: Name of the cluster the file belongs to.
         :param file_name: File name on s3.
         :return: Returns the path to the file
         """
@@ -119,6 +136,8 @@ class kms3(object):
             print "[-] Error"
             print e
             return
+
+        os.chmod(out_file_path, 0600)
 
         return out_file_path
 
@@ -164,10 +183,12 @@ class kms3(object):
             return
 
         key_file_out.write(decrypted_key)
+        os.chmod(key_file, 0600)
         key_file_out.close()
 
         # Download the file from s3 to /dev/shm
         file_name = self.download_from_s3(name, file)
+        os.chmod(file_name, 0600)
 
         # Decrypt the file before editing
         decrypted_file_name = self.decrypt_file(file_name, decrypted_key)
@@ -176,11 +197,13 @@ class kms3(object):
         EDITOR = os.environ.get('EDITOR','vim')
         call([EDITOR, decrypted_file_name])
 
-        # Upload the file back to s3
+        # Encrypt and upload the file back to s3
+        self.upload(name, decrypted_file_name)
 
-        # Get rid of the evidence
-        # Nuke file here
-        self.secure_delete(key_file, passes=10)
+        # Clean up any other files laying around
+        #self.secure_delete(file_name, passes=10)
+        #self.secure_delete(decrypted_file_name, passes=10)
+        #self.secure_delete(key_file, passes=10)
 
         return
 
@@ -212,6 +235,10 @@ class kms3(object):
         :param passes: Number of passes
         :return:
         """
+        # If the file doesn't exist we'll just silently exit
+        if not open(path, "r"):
+            return
+
         try:
             retcode = subprocess.call("shred -u -n " + str(passes) + " " + path, shell=True)
         except OSError as e:
