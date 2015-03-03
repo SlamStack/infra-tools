@@ -8,14 +8,15 @@ Toolset for working with:
 __author__ = 'shane.warner@fox.com'
 
 import argparse
-import boto
 import base64
-import chef
+import binascii
+import boto
 import json
 import time
 import os
 import random
 import subprocess
+import StringIO
 from subprocess import call
 from argparse import RawTextHelpFormatter
 from boto import utils
@@ -35,6 +36,7 @@ class kms3(object):
             self.__secrets_bucket__ = "ffe-secrets"
             self.__chef_role_arn__ = "arn:aws:iam::" + self.acct_id + ":role/chef"
             self.__key_spec__ = "AES_256"
+            self.k = 16
             self.recycle_key = 0
             self.recycle_role = 0
         except Exception as e:
@@ -42,38 +44,44 @@ class kms3(object):
             print e
             return
 
-    def pad(self, s):
-        return s + b"\0" * (AES.block_size - len(s) % AES.block_size)
+    def _get_data_key(self, name):
+        """
+        Internal function to retrieve the data key for a cluster using KMS and the secrets file.
+        :param name:  Name of the databag (Usually cluster name)
+        :return:
+        """
+        # Load the ciphertext blob for the databag from the secrets file
+        try:
+            json_data = open(self.__secrets_dir__ + name + ".json", "r")
+        except:
+            print "[-] Error opening json file for {0}".format(name)
+            return
 
-    def encrypt(self, message, key, key_size=256):
-        message = self.pad(message)
-        iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(AES.block_size))
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        return iv + cipher.encrypt(message)
+        # Decode into raw form before passing to KMS
+        data = json.load(json_data)
+        ciphertextblob = base64.b64decode(data[name]["CiphertextBlob"])
+
+        # Decrypt the data key ciphertext blob with KMS.
+        try:
+            response = self.kms.decrypt(ciphertext_blob=ciphertextblob)
+        except Exception as e:
+            print e
+            return
+
+        decrypted_key = response.get("Plaintext")
+
+        return decrypted_key
 
     def decrypt(self, ciphertext, key):
+        """
+        Decrypts the ciphertext contents with the supplied key
+        :param ciphertext: Data to be decrypted
+        :param key: Key to be used for decryption
+        """
         iv = ciphertext[:AES.block_size]
-        cipher = AES.new(key, AES.MODE_CBC, iv)
+        cipher = AES.new(key, AES.MODE_CBC, iv, segment_size=64)
         plaintext = cipher.decrypt(ciphertext[AES.block_size:])
-        return plaintext.rstrip(b"\0")
-
-    def encrypt_file(self, file_name, key):
-        with open(file_name, 'rb') as fo:
-            try:
-                plaintext = fo.read()
-            except:
-                print "[-] Error opening file {0} for reading.".format(file_name)
-                return
-
-        enc = self.encrypt(plaintext, key)
-        with open("/dev/shm/" + os.path.basename(file_name) + ".enc", 'wb') as fo:
-            try:
-                fo.write(enc)
-            except:
-                print "[-] Error writing tmp file {0}".format("/dev/shm/" + os.path.basename(file_name) + ".enc")
-        os.chmod("/dev/shm/" + os.path.basename(file_name) + ".enc", 0600)
-
-        return
+        return self.pkcs7_unpad(plaintext) 
 
     def decrypt_file(self, file_name, key):
         """
@@ -95,7 +103,6 @@ class kms3(object):
             return
 
         with open(file_name[:-4], 'wb') as fo:
-
             try:
                 fo.write(dec)
             except:
@@ -204,6 +211,35 @@ class kms3(object):
         self.secure_delete(file_name, passes=10)
         self.secure_delete(decrypted_file_name, passes=10)
         self.secure_delete(key_file, passes=10)
+
+        return
+
+    def encrypt(self, message, key):
+        """
+        Encrypts the message contents with the supplied key
+        :param message: Data to be encrypted
+        :param key: Key to be used for encryption
+        """
+        message = self.pkcs7_pad(message)
+        iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(AES.block_size))
+        cipher = AES.new(key, AES.MODE_CBC, iv, segment_size=64)
+        return iv + cipher.encrypt(message)
+
+    def encrypt_file(self, file_name, key):
+        with open(file_name, 'rb') as fo:
+            try:
+                plaintext = fo.read()
+            except:
+                print "[-] Error opening file {0} for reading.".format(file_name)
+                return
+
+        enc = self.encrypt(plaintext, key)
+        with open("/dev/shm/" + os.path.basename(file_name) + ".enc", 'wb') as fo:
+            try:
+                fo.write(enc)
+            except:
+                print "[-] Error writing tmp file {0}".format("/dev/shm/" + os.path.basename(file_name) + ".enc")
+        os.chmod("/dev/shm/" + os.path.basename(file_name) + ".enc", 0600)
 
         return
 
@@ -411,6 +447,30 @@ class kms3(object):
 
         return
 
+    def pkcs7_unpad(self, text):
+        '''
+        Remove the PKCS#7 padding from a text string
+        '''
+        nl = len(text)
+        val = int(binascii.hexlify(text[-1]), 16)
+        if val > self.k:
+            raise ValueError('Input is not padded or padding is corrupt')
+
+        l = nl - val
+        return text[:l]
+
+    def pkcs7_pad(self, text):
+        '''
+        Pad an input string according to PKCS#7
+        '''
+        l = len(text)
+        output = StringIO.StringIO()
+        val = self.k - (l % self.k)
+        for _ in xrange(val):
+            output.write('%02x' % val)
+        
+        return text + binascii.unhexlify(output.getvalue())
+
     def upload_to_s3(self, name, file_name):
         """
         Uploads file to an s3 bucket
@@ -433,34 +493,6 @@ class kms3(object):
         print "[+] Uploaded {0}".format("s3://" + self.__secrets_bucket__ + "/" + path)
 
         return
-
-    def _get_data_key(self, name):
-        """
-        Internal function to retrieve the data key for a cluster using KMS and the secrets file.
-        :param name:  Name of the databag (Usually cluster name)
-        :return:
-        """
-        # Load the ciphertext blob for the databag from the secrets file
-        try:
-            json_data = open(self.__secrets_dir__ + name + ".json", "r")
-        except:
-            print "[-] Error opening json file for {0}".format(name)
-            return
-
-        # Decode into raw form before passing to KMS
-        data = json.load(json_data)
-        ciphertextblob = base64.b64decode(data[name]["CiphertextBlob"])
-
-        # Decrypt the data key ciphertext blob with KMS.
-        try:
-            response = self.kms.decrypt(ciphertext_blob=ciphertextblob)
-        except Exception as e:
-            print e
-            return
-
-        decrypted_key = response.get("Plaintext")
-
-        return decrypted_key
 
 def main():
     parser = argparse.ArgumentParser(description='kms3.py ',
