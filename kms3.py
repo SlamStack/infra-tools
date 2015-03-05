@@ -22,6 +22,7 @@ from argparse import RawTextHelpFormatter
 from boto import utils
 from boto.s3.key import Key
 from Crypto.Cipher import AES
+from hashlib import sha256
 
 class kms3(object):
     def __init__(self):
@@ -46,13 +47,20 @@ class kms3(object):
 
     def _get_data_key(self, name):
         """
-        Internal function to retrieve the data key for a cluster using KMS and the secrets file.
-        :param name:  Name of the databag (Usually cluster name)
+        Internal function to retrieve the data key for a cluster using KMS and the secrets file on s3.
+        :param name:  Name of the cluster.
         :return:
         """
+        # If the file exists on s3, download and proceed.
+        if not self.exists_on_s3(name, name + ".json"):
+            print "[+] Error locating secrets file on s3 for {0}".format(name)
+            return
+
+        secrets_file = self.download_from_s3(name, name + ".json")
+
         # Load the ciphertext blob for the databag from the secrets file
         try:
-            json_data = open(self.__secrets_dir__ + name + ".json", "r")
+            json_data = open(secrets_file, "r")
         except:
             print "[-] Error opening json file for {0}".format(name)
             return
@@ -155,6 +163,10 @@ class kms3(object):
         :return:
         """
         temp_data_key = self._get_data_key(name)
+        # File wasn't found on s3 so we return.
+        if not temp_data_key:
+            return
+
         output_file = "/dev/shm/" + name + ".tmp.key"
 
         try:
@@ -164,6 +176,8 @@ class kms3(object):
             return
 
         file.write(temp_data_key)
+        os.chmod(output_file, 0600)
+
         print "[+] {0} data key saved to {1}".format(name, output_file)
 
     def edit(self, name, file):
@@ -444,6 +458,14 @@ class kms3(object):
 
             # Remove the file from /dev/shm securely
             self.secure_delete("/dev/shm/" + os.path.basename(file_name) + ".enc", 10)
+
+            # Return the sha256sum of the original file for use in Chef's s3_file resource
+            file = open(file_name, "r")
+            file_data = file.read()
+            file_sha256_checksum = sha256(file_data)
+            file.close()
+
+            print "[+] sha256sum for {0} is {1}".format(file_name, file_sha256_checksum.hexdigest())
 
         return
 
