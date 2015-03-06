@@ -344,8 +344,17 @@ class kms3(object):
                       ],
                       "Effect": "Allow",
                       "Resource": [
-                        "arn:aws:s3:::ffe-secrets/cluster",
-                        "arn:aws:s3:::ffe-secrets/cluster/""" + name + """/*"
+                        "arn:aws:s3:::""" + self.__secrets_bucket__ + """/cluster",
+                        "arn:aws:s3:::""" + self.__secrets_bucket__ + """/cluster/""" + name + """/*"
+                      ]
+                    },
+                    {
+                      "Action": [
+                        "s3:ListBucket"
+                      ],
+                      "Effect": "Allow",
+                      "Resource": [
+                        "arn:aws:s3:::""" + self.__secrets_bucket__ + """"
                       ]
                     }
                   ]
