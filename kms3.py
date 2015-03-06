@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 """
 Toolset for working with:
  - KMS encrypted files on s3.
