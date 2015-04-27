@@ -5,7 +5,6 @@ RICounter - outputs RI balance for the current AWS region
 negative balances indicate excess reserved instances
 positive balances indicate instances that are not falling under RIs
 """
-__author__ = 'devon.bleak@fox.com'
 
 from collections import Counter;
 from os import getenv;
