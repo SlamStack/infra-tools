@@ -3,7 +3,6 @@
 Toolset for working with KMS encrypted Chef databags
 """
 
-__author__ = 'shane.warner@fox.com'
 
 import argparse
 import boto
