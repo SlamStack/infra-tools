@@ -4,7 +4,6 @@ amitool.py provides a toolset for common AMI operations.
 
 Currently only connects to the region from which it is run.
 """
-__author__ = 'shane.warner@fox.com'
 
 import sys
 import re
