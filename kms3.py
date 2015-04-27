@@ -5,7 +5,7 @@ Toolset for working with:
  - Roles, grants and KMS keys on a per cluster context.
 """
 
-__author__ = 'shane.warner@fox.com'
+
 
 import argparse
 import base64
